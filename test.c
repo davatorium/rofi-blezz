@@ -13,6 +13,8 @@
 
 
 #include "helper.h"
+#include "mode-private.h"
+G_MODULE_EXPORT Mode mode;
 
 typedef enum {
     DIRECTORY,
@@ -72,6 +74,8 @@ typedef struct
     char         **entry_list;
     /** Length of the #entry_list.*/
     unsigned int entry_list_length;
+
+    char *current_name;
 } TESTModePrivateData;
 
 
@@ -82,11 +86,45 @@ static void exec_test ( const char *command )
     }
 }
 
+static void node_set_current_name ( TESTModePrivateData *pd, Node *p )
+{
+    GList *list = NULL;
+    Node *iter = p;
+    int count = 0;
+    size_t length = 0;
+    do {
+        list = g_list_prepend ( list, iter );
+        length += strlen(iter->name);
+        iter = iter->parent;
+        count++;
+    }while ( iter );
+    g_free ( pd->current_name );
+    if ( count == 0 || length == 0){
+        pd->current_name = g_strdup("blezz");
+        mode.display_name = pd->current_name;
+        return;
+    }
+    pd->current_name = g_malloc0 ( (count+length+1)*sizeof(char));
+    size_t index = 0;
+    for ( GList *i = g_list_first (list); i != NULL; i = g_list_next(i))
+    {
+        Node *n = i->data;
+        size_t l = strlen(n->name);
+        g_strlcpy(&(pd->current_name[index]), n->name, l+1 );
+        index+=l;
+        pd->current_name[index] = '>';
+        index++;
+    }
+    pd->current_name[index-1] = '\0';
+    g_list_free(list);
+    mode.display_name = pd->current_name;
+}
+
 static void node_child_add ( Node *p, Node *c )
 {
-   p->children = g_realloc (p->children, (p->num_children+1)*sizeof(Node*));
-   p->children[p->num_children] = c;
-   p->num_children++;
+    p->children = g_realloc (p->children, (p->num_children+1)*sizeof(Node*));
+    p->children[p->num_children] = c;
+    p->num_children++;
 }
 
 
@@ -118,6 +156,7 @@ static char ** get_test (  Mode *sw, unsigned int *length )
                 if( rmpd->root == NULL ){
                     rmpd->root = cur_dir;
                     rmpd->current = rmpd->root;
+                    node_set_current_name ( rmpd, rmpd->current );
                 }
                 rmpd->directories = g_list_append ( rmpd->directories, node );
             }
@@ -159,7 +198,7 @@ static char ** get_test (  Mode *sw, unsigned int *length )
 
                         node_child_add ( cur_dir, node );
                     }
-                
+
                 }
             }
 
@@ -167,7 +206,7 @@ static char ** get_test (  Mode *sw, unsigned int *length )
         if (buffer ) {
             free(buffer);
         }
-    
+
         fclose ( fp );
     }
 
@@ -216,7 +255,8 @@ static ModeMode test_mode_result ( Mode *sw, int mretv, char **input, unsigned i
         retv = ( mretv & MENU_LOWER_MASK );
     }
     else if ( ( mretv & MENU_OK ) ) {
-        switch( rmpd->current->children[selected_line]->type ) {
+        Node *cur =rmpd->current->children[selected_line];
+        switch( cur->type ) {
             case DIR_REF:
                 {
                     for ( GList *iter = g_list_first ( rmpd->directories);
@@ -225,40 +265,40 @@ static ModeMode test_mode_result ( Mode *sw, int mretv, char **input, unsigned i
                         if ( g_strcmp0(rmpd->current->children[selected_line]->name, d->name) ==  0){
                             d->parent = rmpd->current;
                             rmpd->current = d;
-                        } 
+                            node_set_current_name ( rmpd, rmpd->current );
+                            //rofi_view_update_prompt ();
+                        }
 
                     }
-                    //rofi_view_clear_input ( rofi_view_get_active () );
-                    retv = RELOAD_DIALOG;        
+                    retv = RESET_DIALOG;
                     break;
                 }
             case ACT_REF:
                 execsh ( rmpd->current->children[selected_line]->command);
-            break;
-            case GO_UP:
-            {
-                if ( rmpd->current->children[selected_line]->parent != NULL ) {
-                    Node *d = rmpd->current->children[selected_line]->parent;
-                    rmpd->current->children[selected_line]->parent = NULL;
-                    rmpd->current = d;
-                    //rofi_view_clear_input ( rofi_view_get_active () );
-                }
-                retv = RELOAD_DIALOG;        
                 break;
-            }
+            case GO_UP:
+                {
+                    if ( rmpd->current->parent  ) {
+                        Node *d = rmpd->current->parent;
+                        rmpd->current = d;
+                        node_set_current_name ( rmpd, rmpd->current );
+                        //rofi_view_clear_input ( rofi_view_get_active () );
+                    }
+                    retv = RESET_DIALOG;
+                    break;
+                }
             default:
-            retv = RELOAD_DIALOG;        
+                retv = RESET_DIALOG;
 
 
         }
-//        exec_test ( rmpd->entry_list[selected_line] );
     }
     else if ( ( mretv & MENU_CUSTOM_INPUT ) && *input != NULL && *input[0] != '\0' ) {
         exec_test ( *input );
     }
     else if ( ( mretv & MENU_ENTRY_DELETE ) ) {
         // Stay
-        retv = RELOAD_DIALOG;
+        retv = RESET_DIALOG;
     }
     return retv;
 }
@@ -266,7 +306,7 @@ static void test_mode_destroy ( Mode *sw )
 {
     TESTModePrivateData *rmpd = (TESTModePrivateData *) mode_get_private_data ( sw );
     if ( rmpd != NULL ) {
-//        g_strfreev ( rmpd->entry_list );
+        //        g_strfreev ( rmpd->entry_list );
         g_free ( rmpd );
         mode_set_private_data ( sw, NULL );
     }
@@ -282,9 +322,9 @@ static char *node_get_display_string ( Node *node )
             return g_strdup_printf("~ [%s] %s", node->hotkey, node->name);
         case GO_UP:
             return g_strdup ("< [.] Back");
-    
+
         default:
-           return g_strdup("Error"); 
+            return g_strdup("Error");
     }
 
 }
@@ -305,11 +345,11 @@ static char * test_process_input ( Mode *sw, const char *input )
 {
     return g_strdup(input);
 }
-#include "mode-private.h"
-G_MODULE_EXPORT Mode mode =
+
+Mode mode =
 {
     .abi_version        = ABI_VERSION,
-    .name               = "test",
+    .name               = "blezz",
     .cfg_name_key       = "display-test",
     ._init              = test_mode_init,
     ._get_num_entries   = test_mode_get_num_entries,
