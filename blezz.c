@@ -14,6 +14,7 @@
 
 #include "helper.h"
 #include "mode-private.h"
+
 G_MODULE_EXPORT Mode mode;
 
 typedef enum {
@@ -30,7 +31,6 @@ typedef struct _Node {
     char *hotkey;
     /** name */
     char *name;
-
     /** Command */
     char *command;
 
@@ -66,27 +66,24 @@ static inline int execsh ( const char *cmd )
 typedef struct
 {
     Node *current;
-    Node *root;
-
-
     GList *directories;
-    /** List if available test commands.*/
-    char         **entry_list;
-    /** Length of the #entry_list.*/
-    unsigned int entry_list_length;
-
     char *current_name;
-} TESTModePrivateData;
+} BLEZZModePrivateData;
 
-
-static void exec_test ( const char *command )
+static void node_free ( Node *p )
 {
-    if ( !command || !command[0] ) {
-        return;
+    g_free ( p->hotkey );
+    g_free ( p->name );
+    g_free ( p->command );
+    for ( size_t i = 0; i < p->num_children; i++ ) {
+        node_free ( p->children[i]);
     }
+
+    g_free ( p->children );
+    g_free ( p );
 }
 
-static void node_set_current_name ( TESTModePrivateData *pd, Node *p )
+static void node_set_current_name ( BLEZZModePrivateData *pd, Node *p )
 {
     GList *list = NULL;
     Node *iter = p;
@@ -127,11 +124,9 @@ static void node_child_add ( Node *p, Node *c )
     p->num_children++;
 }
 
-
-static char ** get_test (  Mode *sw, unsigned int *length )
+static char ** get_blezz (  Mode *sw )
 {
-    TESTModePrivateData *rmpd = (TESTModePrivateData *) mode_get_private_data ( sw );
-    char         **retv        = NULL;
+    BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
 
     char *path = rofi_expand_path ( "~/.config/blezz/content");
     FILE *fp = fopen ( path, "r" );
@@ -153,9 +148,8 @@ static char ** get_test (  Mode *sw, unsigned int *length )
                 node->name = g_strdup(buffer);
                 node->type = DIRECTORY;
                 cur_dir = node;
-                if( rmpd->root == NULL ){
-                    rmpd->root = cur_dir;
-                    rmpd->current = rmpd->root;
+                if( rmpd->current == NULL ){
+                    rmpd->current = cur_dir;
                     node_set_current_name ( rmpd, rmpd->current );
                 }
                 rmpd->directories = g_list_append ( rmpd->directories, node );
@@ -171,7 +165,7 @@ static char ** get_test (  Mode *sw, unsigned int *length )
                         *end = '\0';
                         end = g_strstr_len (start, -1, ",");
                         *end = '\0';
-                        node->hotkey = g_strdup(start);
+                        node->hotkey = g_utf8_strdown(start,-1);
                         start = end+1;
                         node->name = g_strdup(start);
                         node_child_add ( cur_dir, node );
@@ -188,7 +182,7 @@ static char ** get_test (  Mode *sw, unsigned int *length )
                         *end = '\0';
                         end = g_strstr_len (start, -1, ",");
                         *end = '\0';
-                        node->hotkey = g_strdup(start);
+                        node->hotkey = g_utf8_strdown(start,-1);
                         start = end+1;
                         end = g_strstr_len (start, -1, ",");
                         *end = '\0';
@@ -201,7 +195,6 @@ static char ** get_test (  Mode *sw, unsigned int *length )
 
                 }
             }
-
         }
         if (buffer ) {
             free(buffer);
@@ -219,42 +212,37 @@ static char ** get_test (  Mode *sw, unsigned int *length )
     }
 
     g_free(path);
-    return retv;
 }
 
-
-static int test_mode_init ( Mode *sw )
+static int blezz_mode_init ( Mode *sw )
 {
     if ( mode_get_private_data ( sw ) == NULL ) {
-        TESTModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
+        BLEZZModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
         mode_set_private_data ( sw, (void *) pd );
-        pd->entry_list = get_test ( sw, &( pd->entry_list_length ) );
+        get_blezz ( sw );
     }
     return TRUE;
 }
-static unsigned int test_mode_get_num_entries ( const Mode *sw )
+static unsigned int blezz_mode_get_num_entries ( const Mode *sw )
 {
-    const TESTModePrivateData *rmpd = (const TESTModePrivateData *) mode_get_private_data ( sw );
+    const BLEZZModePrivateData *rmpd = (const BLEZZModePrivateData *) mode_get_private_data ( sw );
     if ( rmpd->current == NULL ) {
         return 0;
     }
     return rmpd->current->num_children;
 }
 
-static ModeMode test_mode_result ( Mode *sw, int mretv, char **input, unsigned int selected_line )
+static ModeMode blezz_mode_result ( Mode *sw, int mretv, char **input, unsigned int selected_line )
 {
     ModeMode           retv  = MODE_EXIT;
-    TESTModePrivateData *rmpd = (TESTModePrivateData *) mode_get_private_data ( sw );
+    BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
     if ( mretv & MENU_NEXT ) {
         retv = NEXT_DIALOG;
-    }
-    else if ( mretv & MENU_PREVIOUS ) {
+    } else if ( mretv & MENU_PREVIOUS ) {
         retv = PREVIOUS_DIALOG;
-    }
-    else if ( mretv & MENU_QUICK_SWITCH ) {
+    } else if ( mretv & MENU_QUICK_SWITCH ) {
         retv = ( mretv & MENU_LOWER_MASK );
-    }
-    else if ( ( mretv & MENU_OK ) ) {
+    } else if ( ( mretv & MENU_OK ) ) {
         Node *cur =rmpd->current->children[selected_line];
         switch( cur->type ) {
             case DIR_REF:
@@ -262,19 +250,18 @@ static ModeMode test_mode_result ( Mode *sw, int mretv, char **input, unsigned i
                     for ( GList *iter = g_list_first ( rmpd->directories);
                             iter != NULL; iter = g_list_next ( iter )){
                         Node *d = iter->data;
-                        if ( g_strcmp0(rmpd->current->children[selected_line]->name, d->name) ==  0){
+                        if ( g_strcmp0(cur->name, d->name) ==  0){
                             d->parent = rmpd->current;
                             rmpd->current = d;
                             node_set_current_name ( rmpd, rmpd->current );
-                            //rofi_view_update_prompt ();
+                            break;
                         }
-
                     }
                     retv = RESET_DIALOG;
                     break;
                 }
             case ACT_REF:
-                execsh ( rmpd->current->children[selected_line]->command);
+                execsh ( cur->command);
                 break;
             case GO_UP:
                 {
@@ -282,31 +269,29 @@ static ModeMode test_mode_result ( Mode *sw, int mretv, char **input, unsigned i
                         Node *d = rmpd->current->parent;
                         rmpd->current = d;
                         node_set_current_name ( rmpd, rmpd->current );
-                        //rofi_view_clear_input ( rofi_view_get_active () );
                     }
                     retv = RESET_DIALOG;
                     break;
                 }
             default:
                 retv = RESET_DIALOG;
-
-
         }
-    }
-    else if ( ( mretv & MENU_CUSTOM_INPUT ) && *input != NULL && *input[0] != '\0' ) {
-        exec_test ( *input );
-    }
-    else if ( ( mretv & MENU_ENTRY_DELETE ) ) {
-        // Stay
-        retv = RESET_DIALOG;
     }
     return retv;
 }
-static void test_mode_destroy ( Mode *sw )
+
+static void blezz_mode_destroy ( Mode *sw )
 {
-    TESTModePrivateData *rmpd = (TESTModePrivateData *) mode_get_private_data ( sw );
+    BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
     if ( rmpd != NULL ) {
-        //        g_strfreev ( rmpd->entry_list );
+        printf("mode destroy\n");
+        for ( GList *i = g_list_first (rmpd->directories); i != NULL; i = g_list_next(i)){
+            Node *n = (Node *)i->data;
+            node_free ( n );
+        }
+        g_list_free ( rmpd->directories );
+
+        g_free ( rmpd->current_name );
         g_free ( rmpd );
         mode_set_private_data ( sw, NULL );
     }
@@ -322,28 +307,21 @@ static char *node_get_display_string ( Node *node )
             return g_strdup_printf("~ [%s] %s", node->hotkey, node->name);
         case GO_UP:
             return g_strdup ("< [.] Back");
-
         default:
             return g_strdup("Error");
     }
-
 }
 
 static char *_get_display_value ( const Mode *sw, unsigned int selected_line, G_GNUC_UNUSED int *state, int get_entry )
 {
-    TESTModePrivateData *rmpd = (TESTModePrivateData *) mode_get_private_data ( sw );
+    BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
     return get_entry ? node_get_display_string ( rmpd->current->children[selected_line]) : NULL;
 }
 
-static int test_token_match ( const Mode *sw, GRegex **tokens, unsigned int index )
+static int blezz_token_match ( const Mode *sw, GRegex **tokens, unsigned int index )
 {
-    TESTModePrivateData *rmpd = (TESTModePrivateData *) mode_get_private_data ( sw );
+    BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
     return token_match ( tokens, rmpd->current->children[index]->hotkey);
-}
-
-static char * test_process_input ( Mode *sw, const char *input )
-{
-    return g_strdup(input);
 }
 
 Mode mode =
@@ -351,14 +329,14 @@ Mode mode =
     .abi_version        = ABI_VERSION,
     .name               = "blezz",
     .cfg_name_key       = "display-test",
-    ._init              = test_mode_init,
-    ._get_num_entries   = test_mode_get_num_entries,
-    ._result            = test_mode_result,
-    ._destroy           = test_mode_destroy,
-    ._token_match       = test_token_match,
+    ._init              = blezz_mode_init,
+    ._get_num_entries   = blezz_mode_get_num_entries,
+    ._result            = blezz_mode_result,
+    ._destroy           = blezz_mode_destroy,
+    ._token_match       = blezz_token_match,
     ._get_display_value = _get_display_value,
     ._get_completion    = NULL,
-    ._preprocess_input  = test_process_input,
+    ._preprocess_input  = NULL, 
     .private_data       = NULL,
-    .free               = NULL
+    .free               = NULL,
 };
