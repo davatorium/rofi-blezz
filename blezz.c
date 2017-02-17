@@ -12,8 +12,10 @@
 #include <gmodule.h>
 
 
-#include "helper.h"
-#include "mode-private.h"
+#include <rofi/mode.h>
+#include <rofi/helper.h>
+#include <rofi/mode-private.h>
+#include <rofi/settings.h>
 
 G_MODULE_EXPORT Mode mode;
 
@@ -39,27 +41,6 @@ typedef struct _Node {
     size_t num_children;
 }Node;
 
-static inline int execsh ( const char *cmd )
-{
-    int  retv   = TRUE;
-    char **args = NULL;
-    int  argc   = 0;
-    helper_parse_setup ( config.run_command, &args, &argc, "{cmd}", cmd, NULL );
-    GError *error = NULL;
-    g_spawn_async ( NULL, args, NULL, G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error );
-    if ( error != NULL ) {
-        char *msg = g_strdup_printf ( "Failed to execute: '%s'\nError: '%s'", cmd, error->message );
-        rofi_view_error_dialog ( msg, FALSE  );
-        g_free ( msg );
-        // print error.
-        g_error_free ( error );
-        retv = FALSE;
-    }
-
-    // Free the args list.
-    g_strfreev ( args );
-    return retv;
-}
 /**
  * The internal data structure holding the private data of the TEST Mode.
  */
@@ -261,7 +242,7 @@ static ModeMode blezz_mode_result ( Mode *sw, int mretv, char **input, unsigned 
                     break;
                 }
             case ACT_REF:
-                execsh ( cur->command);
+                helper_execute_command ( NULL, cur->command, FALSE );
                 break;
             case GO_UP:
                 {
@@ -284,7 +265,6 @@ static void blezz_mode_destroy ( Mode *sw )
 {
     BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
     if ( rmpd != NULL ) {
-        printf("mode destroy\n");
         for ( GList *i = g_list_first (rmpd->directories); i != NULL; i = g_list_next(i)){
             Node *n = (Node *)i->data;
             node_free ( n );
@@ -321,7 +301,7 @@ static char *_get_display_value ( const Mode *sw, unsigned int selected_line, G_
 static int blezz_token_match ( const Mode *sw, GRegex **tokens, unsigned int index )
 {
     BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
-    return token_match ( tokens, rmpd->current->children[index]->hotkey);
+    return helper_token_match ( tokens, rmpd->current->children[index]->hotkey);
 }
 
 Mode mode =
