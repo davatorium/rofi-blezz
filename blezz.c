@@ -15,7 +15,6 @@
 #include <rofi/mode.h>
 #include <rofi/helper.h>
 #include <rofi/mode-private.h>
-#include <rofi/settings.h>
 
 G_MODULE_EXPORT Mode mode;
 
