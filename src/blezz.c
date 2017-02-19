@@ -43,6 +43,11 @@ typedef enum {
     GO_UP
 } NodeType;
 
+typedef enum {
+    QUIT,
+    RELOAD,
+} ActExitMode;
+
 typedef struct _Node {
     NodeType type;
 
@@ -52,6 +57,9 @@ typedef struct _Node {
     char *name;
     /** Command */
     char *command;
+
+    /** Exit mode */
+    ActExitMode exit_mode;
 
     struct _Node *parent;
     struct _Node **children;
@@ -186,7 +194,17 @@ static void get_blezz (  Mode *sw )
                         *end = '\0';
                         node->name = g_strdup(start);
                         start = end+1;
-                        node->command = g_strdup(start);
+                        end = g_strstr_len ( start, -1, "," );
+                        if ( end == NULL ) {
+                            node->command = g_strdup(start);
+                        } else {
+                            *end = '\0';
+                            node->command = g_strdup(start);
+                            start = end+1;
+                            if ( g_strcmp0(start, "reload") == 0 ){
+                                node->exit_mode =  RELOAD;
+                            }
+                        }
                         node_child_add ( cur_dir, node );
                     }
                 }
@@ -258,6 +276,7 @@ static ModeMode blezz_mode_result ( Mode *sw, int mretv, char **input, unsigned 
                 }
             case ACT_REF:
                 helper_execute_command ( NULL, cur->command, FALSE );
+                if ( cur->exit_mode == RELOAD ) retv = RESET_DIALOG;
                 break;
             case GO_UP:
                 {
