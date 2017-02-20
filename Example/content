@@ -1,0 +1,43 @@
+Main:
+act(M,Monitor, ~/Programming/GitHub/rofi-scripts/monitor_layout.sh)
+dir(i,I3)
+dir(s,System)
+dir(D,Develop)
+dir(o,Options)
+
+I3:
+dir(gi,Gaps Inner)
+dir(go,Gaps Outer)
+dir(w,Workspace)
+act(c,Start Compton,compton -b)
+
+Gaps Inner:
+act(+,Increase inner,i3-msg gaps inner all plus 5,reload)
+act(-,Decrease inner,i3-msg gaps inner all minus 5,reload)
+act(0,Reset inner,i3-msg gaps inner all set 0,reload)
+
+Gaps Outer:
+act(+,Increase outer,i3-msg gaps outer all plus 5,reload)
+act(-,Decrease outer,i3-msg gaps outer all minus 5,reload)
+act(0,Reset outer,i3-msg gaps outer all set 0,reload)
+
+Workspace:
+act(r,Move workspace to output right,i3-msg move-workspace-to-output-right,reload)
+act(l,Move workspace to output left,i3-msg move-workspace-to-output-left,reload)
+
+Develop:
+act(b,Blezz Dev,code ~/Git/blezz)
+act(s,SW8,code ~/Git/SW804F17)
+
+Options:
+dir(b,Blezz Options)
+act(t,Tint2 Config,leafpad ~/Git/dotfiles/tint2/tint2rc)
+
+Blezz Options:
+act(c,Blezz Content,leafpad ~/Git/blezz/cfg/content)
+act(o,Blezz Options,leafpad ~/Git/blezz/cfg/config)
+
+System:
+act(z,Suspend, systemctl suspend)
+act(s,Shutdown,systemctl poweroff)
+act(r,Reboot,  systemctl reboot)
