@@ -134,7 +134,10 @@ static void get_blezz (  Mode *sw )
 {
     BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
 
-    char *path = rofi_expand_path ( "~/.config/blezz/content");
+    char *dpath = "~/.config/blezz/content";
+    find_arg_str( "-c", &dpath);
+
+    char *path = rofi_expand_path ( dpath );
     FILE *fp = fopen ( path, "r" );
     if ( fp != NULL ) {
         char *buffer = NULL;
@@ -284,8 +287,8 @@ static ModeMode blezz_mode_result ( Mode *sw, int mretv, char **input, unsigned 
                         Node *d = rmpd->current->parent;
                         rmpd->current = d;
                         node_set_current_name ( rmpd, rmpd->current );
+                        retv = RESET_DIALOG;
                     }
-                    retv = RESET_DIALOG;
                     break;
                 }
             default:
