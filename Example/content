@@ -22,8 +22,8 @@ act(-,Decrease outer,i3-msg gaps outer all minus 5,reload)
 act(0,Reset outer,i3-msg gaps outer all set 0,reload)
 
 Workspace:
-act(r,Move workspace to output right,i3-msg move-workspace-to-output-right,reload)
-act(l,Move workspace to output left,i3-msg move-workspace-to-output-left,reload)
+act(r,Move workspace to output right,i3-msg move workspace to output right,reload)
+act(l,Move workspace to output left,i3-msg move workspace to output left,reload)
 
 Develop:
 act(b,Blezz Dev,code ~/Git/blezz)
