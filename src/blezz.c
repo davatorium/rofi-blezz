@@ -139,7 +139,7 @@ static Node *blezz_parse_dir_node ( char *start )
     {
         node = g_malloc0 ( sizeof ( Node ) );
         node->type = DIR_REF;
-        node->hotkey = g_strstrip(g_strdup(strv[0]));
+        node->hotkey = g_strstrip(g_utf8_strdown(strv[0],-1));
         node->name = g_strstrip(g_strdup(strv[1]));
     }
     g_strfreev ( strv );
@@ -169,10 +169,8 @@ static Node *blezz_parse_act_node ( char *start )
 static void get_blezz (  Mode *sw )
 {
     BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
-
     char *dpath = "~/.config/blezz/content";
     find_arg_str( "-c", &dpath);
-
     char *path = rofi_expand_path ( dpath );
     FILE *fp = fopen ( path, "r" );
     if ( fp != NULL ) {
@@ -272,8 +270,7 @@ static ModeMode blezz_mode_result ( Mode *sw, int mretv, char **input, unsigned 
         switch( cur->type ) {
             case DIR_REF:
                 {
-                    for ( GList *iter = g_list_first ( rmpd->directories);
-                            iter != NULL; iter = g_list_next ( iter )){
+                    for ( GList *iter = g_list_first ( rmpd->directories); iter != NULL; iter = g_list_next ( iter )){
                         Node *d = iter->data;
                         if ( g_strcmp0(cur->name, d->name) ==  0){
                             d->parent = rmpd->current;
