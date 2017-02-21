@@ -49,6 +49,7 @@ typedef enum {
 } ActExitMode;
 
 typedef struct _Node {
+    /** Type of the node */
     NodeType type;
 
     /** Hotkey */
@@ -61,7 +62,9 @@ typedef struct _Node {
     /** Exit mode */
     ActExitMode exit_mode;
 
+    /** Parent (when called) */
     struct _Node *parent;
+    /** Children (only if type == DIRECTORY) */
     struct _Node **children;
     size_t num_children;
 }Node;
@@ -71,8 +74,11 @@ typedef struct _Node {
  */
 typedef struct
 {
+    /** Current visible node */
     Node *current;
+    /** List of all directories specified. */
     GList *directories;
+    /** Name to show as prompt. */
     char *current_name;
 } BLEZZModePrivateData;
 
@@ -170,7 +176,7 @@ static void get_blezz (  Mode *sw )
 {
     BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
     char *dpath = "~/.config/blezz/content";
-    find_arg_str( "-c", &dpath);
+    find_arg_str( "-blezz-config", &dpath);
     char *path = rofi_expand_path ( dpath );
     FILE *fp = fopen ( path, "r" );
     if ( fp != NULL ) {
@@ -307,12 +313,8 @@ static void blezz_mode_destroy ( Mode *sw )
 {
     BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
     if ( rmpd != NULL ) {
-        for ( GList *i = g_list_first (rmpd->directories); i != NULL; i = g_list_next(i)){
-            Node *n = (Node *)i->data;
-            node_free ( n );
-        }
+        g_list_foreach ( rmpd->directories, (GFunc)node_free, NULL );
         g_list_free ( rmpd->directories );
-
         g_free ( rmpd->current_name );
         g_free ( rmpd );
         mode_set_private_data ( sw, NULL );
@@ -321,8 +323,7 @@ static void blezz_mode_destroy ( Mode *sw )
 
 static char *node_get_display_string ( Node *node )
 {
-    switch ( node->type )
-    {
+    switch ( node->type ) {
         case DIR_REF:
             return g_strdup_printf("/ [%s] %s", node->hotkey, node->name);
         case ACT_REF:

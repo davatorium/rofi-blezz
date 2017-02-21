@@ -8,3 +8,8 @@ Run rofi like:
     rofi -show blezz -modi blezz.so -auto-select -matching normal
 ```
 
+## Commandline Options
+
+The following commandline option is added to rofi:
+
+* `-blezz-config`: Specify blezz config file.
