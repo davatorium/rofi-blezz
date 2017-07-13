@@ -289,7 +289,7 @@ static ModeMode blezz_mode_result ( Mode *sw, int mretv, char **input, unsigned 
                     break;
                 }
             case ACT_REF:
-                helper_execute_command ( NULL, cur->command, FALSE );
+                helper_execute_command ( NULL, cur->command, FALSE,NULL );
                 if ( cur->exit_mode == RELOAD ) retv = RESET_DIALOG;
                 break;
             case GO_UP:
@@ -335,7 +335,7 @@ static char *node_get_display_string ( Node *node )
     }
 }
 
-static char *_get_display_value ( const Mode *sw, unsigned int selected_line, G_GNUC_UNUSED int *state, int get_entry )
+static char *_get_display_value ( const Mode *sw, unsigned int selected_line, G_GNUC_UNUSED int *state, GList **l, int get_entry )
 {
     BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
     return get_entry ? node_get_display_string ( rmpd->current->children[selected_line]) : NULL;
