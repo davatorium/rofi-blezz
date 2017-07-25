@@ -151,10 +151,10 @@ static Node *blezz_parse_dir_node ( char *start )
     g_strfreev ( strv );
     return node;
 }
-static Node *blezz_parse_act_node ( char *start )
+static Node *blezz_parse_act_node ( char *start, gboolean reload )
 {
     Node *node   = NULL;
-    char ** strv = g_strsplit ( start, ",", 4);
+    char ** strv = g_strsplit ( start, ",", 3);
     if ( strv && strv[0] && strv[1] && strv[2] )
     {
         node = g_malloc0 ( sizeof ( Node ) );
@@ -162,11 +162,7 @@ static Node *blezz_parse_act_node ( char *start )
         node->hotkey = g_utf8_strdown(strv[0],-1);
         node->name = g_strdup(strv[1]);
         node->command = g_strdup(strv[2]);
-        if ( strv[3]){
-            if ( g_strcmp0(strv[3], "reload") == 0 ){
-                node->exit_mode =  RELOAD;
-            }
-        }
+        node->exit_mode = (reload)?RELOAD:QUIT;
     }
     g_strfreev ( strv );
     return node;
@@ -213,13 +209,23 @@ static void get_blezz (  Mode *sw )
                         node_child_add ( cur_dir, node );
                     }
                 }
-            } else if ( strncmp ( buffer, "act", 3 ) == 0 ) {
+            } else if  ( strncmp ( buffer, "actReload", 9) == 0 ) {
                 if ( cur_dir ){
                     char *start = g_strstr_len(buffer, rread, "(");
                     char *end = g_strrstr(buffer, ")");
                     if ( start && end ){
                         start++; *end = '\0';
-                        Node *node = blezz_parse_act_node ( start );
+                        Node *node = blezz_parse_act_node ( start, TRUE );
+                        node_child_add ( cur_dir, node );
+                    }
+                }
+            }else if ( strncmp ( buffer, "act", 3 ) == 0 ) {
+                if ( cur_dir ){
+                    char *start = g_strstr_len(buffer, rread, "(");
+                    char *end = g_strrstr(buffer, ")");
+                    if ( start && end ){
+                        start++; *end = '\0';
+                        Node *node = blezz_parse_act_node ( start, FALSE );
                         node_child_add ( cur_dir, node );
                     }
                 }
