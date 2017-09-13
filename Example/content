@@ -12,18 +12,18 @@ dir(w,Workspace)
 act(c,Start Compton,compton -b)
 
 Gaps Inner:
-act(+,Increase inner,i3-msg gaps inner all plus 5,reload)
-act(-,Decrease inner,i3-msg gaps inner all minus 5,reload)
-act(0,Reset inner,i3-msg gaps inner all set 0,reload)
+actReload(+,Increase inner,i3-msg gaps inner all plus 5)
+actReload(-,Decrease inner,i3-msg gaps inner all minus 5)
+actReload(0,Reset inner,i3-msg gaps inner all set 0)
 
 Gaps Outer:
-act(+,Increase outer,i3-msg gaps outer all plus 5,reload)
-act(-,Decrease outer,i3-msg gaps outer all minus 5,reload)
-act(0,Reset outer,i3-msg gaps outer all set 0,reload)
+actReload(+,Increase outer,i3-msg gaps outer all plus 5)
+actReload(-,Decrease outer,i3-msg gaps outer all minus 5)
+actReload(0,Reset outer,i3-msg gaps outer all set 0)
 
 Workspace:
-act(r,Move workspace to output right,i3-msg move workspace to output right,reload)
-act(l,Move workspace to output left,i3-msg move workspace to output left,reload)
+actReload(r,Move workspace to output right,i3-msg move workspace to output right)
+actReload(l,Move workspace to output left,i3-msg move workspace to output left)
 
 Develop:
 act(b,Blezz Dev,code ~/Git/blezz)
