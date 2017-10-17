@@ -347,7 +347,7 @@ static char *_get_display_value ( const Mode *sw, unsigned int selected_line, G_
     return get_entry ? node_get_display_string ( rmpd->current->children[selected_line]) : NULL;
 }
 
-static int blezz_token_match ( const Mode *sw, GRegex **tokens, unsigned int index )
+static int blezz_token_match ( const Mode *sw, rofi_int_matcher ** tokens, unsigned int index )
 {
     BLEZZModePrivateData *rmpd = (BLEZZModePrivateData *) mode_get_private_data ( sw );
     return helper_token_match ( tokens, rmpd->current->children[index]->hotkey);
