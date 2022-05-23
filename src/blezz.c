@@ -253,6 +253,9 @@ static void blezz_mode_set_directory ( BLEZZModePrivateData *rmpd ,char const *c
   for ( GList *iter = g_list_first ( rmpd->directories); iter != NULL; iter = g_list_next ( iter )){
     Node *d = iter->data;
     if ( g_strcmp0(name, d->name) ==  0){
+      if ( rmpd->current == d ) {
+        return;
+      }
       d->parent = rmpd->current;
       rmpd->current = d;
       node_set_current_name ( rmpd, rmpd->current );
