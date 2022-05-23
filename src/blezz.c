@@ -248,6 +248,18 @@ static void get_blezz (  Mode *sw )
 
     g_free(path);
 }
+static void blezz_mode_set_directory ( BLEZZModePrivateData *rmpd ,char const *const name )
+{
+  for ( GList *iter = g_list_first ( rmpd->directories); iter != NULL; iter = g_list_next ( iter )){
+    Node *d = iter->data;
+    if ( g_strcmp0(name, d->name) ==  0){
+      d->parent = rmpd->current;
+      rmpd->current = d;
+      node_set_current_name ( rmpd, rmpd->current );
+      return;
+    }
+  }
+}
 
 static int blezz_mode_init ( Mode *sw )
 {
@@ -255,6 +267,12 @@ static int blezz_mode_init ( Mode *sw )
         BLEZZModePrivateData *pd = g_malloc0 ( sizeof ( *pd ) );
         mode_set_private_data ( sw, (void *) pd );
         get_blezz ( sw );
+        char *dir_switch = NULL;
+        if ( find_arg_str("-blezz-directory", &dir_switch) >= 0 ) {
+          if ( dir_switch != NULL ) {
+            blezz_mode_set_directory(pd, dir_switch);
+          }
+        }
     }
     return TRUE;
 }
@@ -282,16 +300,8 @@ static ModeMode blezz_mode_result ( Mode *sw, int mretv, char **input, unsigned 
         switch( cur->type ) {
             case DIR_REF:
                 {
-                    for ( GList *iter = g_list_first ( rmpd->directories); iter != NULL; iter = g_list_next ( iter )){
-                        Node *d = iter->data;
-                        if ( g_strcmp0(cur->name, d->name) ==  0){
-                            d->parent = rmpd->current;
-                            rmpd->current = d;
-                            node_set_current_name ( rmpd, rmpd->current );
-                            break;
-                        }
-                    }
-                    retv = RESET_DIALOG;
+                  blezz_mode_set_directory(rmpd, cur->name);
+                  retv = RESET_DIALOG;
                     break;
                 }
             case ACT_REF:
