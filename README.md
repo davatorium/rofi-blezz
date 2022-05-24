@@ -10,6 +10,7 @@ Run rofi like:
 
 ## Commandline Options
 
-The following commandline option is added to rofi:
+The following commandline options are added to rofi:
 
 * `-blezz-config`: Specify blezz config file.
+* `-blezz-directory`: Specify blezz start directory.
