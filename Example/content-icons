@@ -1,0 +1,39 @@
+Main:
+
+dir(i,I3,window-new-symbolic)
+dir(s,System,preferences-system-windows)
+
+I3:
+dir(w,Workspace)
+dir(c,Container)
+
+Container:
+actReload(1,Move to workspace 1, i3-msg move container to workspace 1)
+actReload(2,Move to workspace 2, i3-msg move container to workspace 2)
+actReload(3,Move to workspace 3, i3-msg move container to workspace 3)
+actReload(4,Move to workspace 4, i3-msg move container to workspace 4)
+actReload(5,Move to workspace 5, i3-msg move container to workspace 5)
+actReload(6,Move to workspace 6, i3-msg move container to workspace 6)
+actReload(7,Move to workspace 7, i3-msg move container to workspace 7)
+actReload(8,Move to workspace 8, i3-msg move container to workspace 8)
+actReload(9,Move to workspace 9, i3-msg move container to workspace 9)
+actReload(0,Move to workspace 0, i3-msg move container to workspace 0)
+
+Workspace:
+actReload(r,Move workspace to output right,i3-msg move workspace to output right)
+actReload(l,Move workspace to output left,i3-msg move workspace to output left)
+actReload(1,Workspace 1,i3-msg workspace 1)
+actReload(2,Workspace 2,i3-msg workspace 2)
+actReload(3,Workspace 3,i3-msg workspace 3)
+actReload(4,Workspace 4,i3-msg workspace 4)
+actReload(5,Workspace 5,i3-msg workspace 5)
+actReload(6,Workspace 6,i3-msg workspace 6)
+actReload(7,Workspace 7,i3-msg workspace 7)
+actReload(8,Workspace 8,i3-msg workspace 8)
+actReload(9,Workspace 9,i3-msg workspace 9)
+actReload(0,Workspace 10,i3-msg workspace 10)
+
+System:
+act(z,Suspend, systemctl suspend, document-save)
+act(s,Shutdown,systemctl poweroff, process-stop)
+act(r,Reboot,  systemctl reboot, view-restore)
