@@ -32,8 +32,8 @@
 #include <unistd.h>
 
 #include <rofi/helper.h>
-#include <rofi/mode-private.h>
 #include <rofi/mode.h>
+#include <rofi/mode-private.h>
 #include <rofi/rofi-icon-fetcher.h>
 
 G_MODULE_EXPORT Mode mode;
