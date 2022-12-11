@@ -143,6 +143,7 @@ static Node *blezz_parse_dir_node(char *start) {
   if (strv && strv[0] && strv[1]) {
     node = g_malloc0(sizeof(Node));
     node->type = DIR_REF;
+    node->icon = g_strdup("folder");
     node->hotkey = g_strstrip(g_utf8_strdown(strv[0], -1));
     node->name = g_strstrip(g_strdup(strv[1]));
     if (strv[2] != NULL) {
