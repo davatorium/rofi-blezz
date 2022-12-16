@@ -377,7 +377,7 @@ static int blezz_token_match(const Mode *sw, rofi_int_matcher **tokens,
 }
 
 static cairo_surface_t *blezz_get_icon(const Mode *sw,
-                                       unsigned int selected_line, int height) {
+                                       unsigned int selected_line, unsigned int height) {
   BLEZZModePrivateData *pd = (BLEZZModePrivateData *)mode_get_private_data(sw);
   if (pd->current == NULL) {
     return NULL;
