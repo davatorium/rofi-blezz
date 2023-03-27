@@ -32,8 +32,8 @@
 #include <unistd.h>
 
 #include <rofi/helper.h>
-#include <rofi/mode.h>
 #include <rofi/mode-private.h>
+#include <rofi/mode.h>
 #include <rofi/rofi-icon-fetcher.h>
 
 G_MODULE_EXPORT Mode mode;
@@ -143,7 +143,12 @@ static Node *blezz_parse_dir_node(char *start) {
   if (strv && strv[0] && strv[1]) {
     node = g_malloc0(sizeof(Node));
     node->type = DIR_REF;
-    node->hotkey = g_strstrip(g_utf8_strdown(strv[0], -1));
+    char buf[6] = {
+        0,
+    };
+    gunichar uchar = g_utf8_get_char(strv[0]);
+    g_unichar_to_utf8(uchar, &(buf[0]));
+    node->hotkey = g_strdup(buf);
     node->name = g_strstrip(g_strdup(strv[1]));
     if (strv[2] != NULL) {
       node->icon = g_strstrip(g_strdup(strv[2]));
