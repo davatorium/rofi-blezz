@@ -143,6 +143,7 @@ static Node *blezz_parse_dir_node(char *start) {
   if (strv && strv[0] && strv[1]) {
     node = g_malloc0(sizeof(Node));
     node->type = DIR_REF;
+    node->icon = g_strdup("folder");
     char buf[6] = {
         0,
     };
@@ -163,7 +164,12 @@ static Node *blezz_parse_act_node(char *start, gboolean reload) {
   if (strv && strv[0] && strv[1] && strv[2]) {
     node = g_malloc0(sizeof(Node));
     node->type = ACT_REF;
-    node->hotkey = g_utf8_strdown(strv[0], -1);
+   char buf[6] = {
+        0,
+    };
+    gunichar uchar = g_utf8_get_char(strv[0]);
+    g_unichar_to_utf8(uchar, &(buf[0]));
+    node->hotkey = g_strdup(buf);
     node->name = g_strdup(strv[1]);
     node->command = g_strdup(strv[2]);
     if (strv[3] != NULL) {
@@ -381,7 +387,7 @@ static int blezz_token_match(const Mode *sw, rofi_int_matcher **tokens,
 }
 
 static cairo_surface_t *blezz_get_icon(const Mode *sw,
-                                       unsigned int selected_line, int height) {
+                                       unsigned int selected_line, unsigned int height) {
   BLEZZModePrivateData *pd = (BLEZZModePrivateData *)mode_get_private_data(sw);
   if (pd->current == NULL) {
     return NULL;
